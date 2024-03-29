@@ -1,1 +1,1 @@
-## Experiments for efficently serving LLM models with "High Throughput & low latency".
+## Experiments for efficently serving LLM models with "High Throughput & low latency"
