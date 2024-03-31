@@ -11,10 +11,13 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model_name = "./models/gpt2"
+model_name = "openai-community/gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+print(device)
+model = model.to(device)
 
 # Define PAD Token = EOS Token = 50256
 tokenizer.pad_token = tokenizer.eos_token
@@ -33,7 +36,7 @@ prompts = [
 ]
 
 # note: padding=True ensures the padding token will be inserted into the tokenized tensors
-inputs = tokenizer(prompts, padding=True, return_tensors="pt")
+inputs = tokenizer(prompts, padding=True, return_tensors="pt").to(device)
 
 
 
@@ -46,7 +49,7 @@ def get_next_inputs(batch, next_token_ids, past_key_values, next_tokens):
         # concatenate vector of 1's with shape [batch_size]
         "attention_mask": torch.cat([
             batch["attention_mask"],
-            torch.ones((next_token_ids.shape[0], 1)),  
+            torch.ones((next_token_ids.shape[0], 1)).to(device),  
         ], dim=1),
         "past_key_values": past_key_values,
         "responses": [
@@ -59,7 +62,7 @@ def get_next_inputs(batch, next_token_ids, past_key_values, next_tokens):
 
 def init_batch(requests):
     prompts = [r[0] for r in requests]
-    inputs = tokenizer(prompts, padding=True, return_tensors="pt")
+    inputs = tokenizer(prompts, padding=True, return_tensors="pt").to(device)
     
     attention_mask = inputs["attention_mask"]
     position_ids = attention_mask.long().cumsum(-1) - 1
